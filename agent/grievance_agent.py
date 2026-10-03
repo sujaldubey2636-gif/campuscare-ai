@@ -112,22 +112,49 @@ class GrievanceAgent:
         """Fallback mode for when API is unavailable or fails."""
         text_lower = complaint_text.lower()
         
-        # Simple heuristic classification
-        if "wi-fi" in text_lower or "internet" in text_lower or "network" in text_lower:
+        # Simple heuristic classification covering all categories
+        if "wi-fi" in text_lower or "internet" in text_lower or "network" in text_lower or "wifi" in text_lower or "server" in text_lower:
             category = "IT"
             department = "IT Support"
-        elif "hostel" in text_lower or "room" in text_lower or "electricity" in text_lower:
+        elif "hostel" in text_lower or "room" in text_lower or "electricity" in text_lower or "water supply" in text_lower or "mess" in text_lower:
             category = "Hostel"
             department = "Hostel Administration"
-        elif "fee" in text_lower or "payment" in text_lower:
+        elif "fee" in text_lower or "payment" in text_lower or "refund" in text_lower or "scholarship" in text_lower:
             category = "Finance"
             department = "Finance Office"
+        elif "exam" in text_lower or "hall ticket" in text_lower or "result" in text_lower or "marksheet" in text_lower:
+            category = "Examination"
+            department = "Examination Cell"
+        elif "library" in text_lower or "book" in text_lower or "library card" in text_lower:
+            category = "Library"
+            department = "Library Administration"
+        elif "bus" in text_lower or "transport" in text_lower or "shuttle" in text_lower:
+            category = "Transport"
+            department = "General Administration"
+        elif "projector" in text_lower or "chair" in text_lower or "fan" in text_lower or "classroom" in text_lower or "lab" in text_lower:
+            category = "Facilities"
+            department = "Maintenance Department"
+        elif "security" in text_lower or "theft" in text_lower or "safety" in text_lower or "guard" in text_lower:
+            category = "Security"
+            department = "Security Office"
+        elif "professor" in text_lower or "lecture" in text_lower or "attendance" in text_lower or "syllabus" in text_lower:
+            category = "Academic"
+            department = "General Administration"
         else:
             category = "Other"
             department = "General Administration"
             
-        priority = "High" if "since" in text_lower or "urgent" in text_lower else "Medium"
-        reason = f"[Fallback Mode] Identified keywords related to {category}."
+        # Priority assessment based on keywords
+        if "safety" in text_lower or "fire" in text_lower or "flood" in text_lower or "theft" in text_lower or "emergency" in text_lower:
+            priority = "Critical"
+        elif "since" in text_lower or "urgent" in text_lower or "not working" in text_lower or "broken" in text_lower or "50" in text_lower:
+            priority = "High"
+        elif "slow" in text_lower or "minor" in text_lower or "replacement" in text_lower:
+            priority = "Low"
+        else:
+            priority = "Medium"
+            
+        reason = f"[Fallback Mode] Classified as {category} ({priority} priority). Routed to {department}."
         
         # Check duplicate manually
         dup_check = check_duplicate_complaints(complaint_text, category)
