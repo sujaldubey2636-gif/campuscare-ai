@@ -1,5 +1,6 @@
 from database.db import get_connection, init_db
 import sqlite3
+import json
 
 def seed_database():
     """Seeds the database with initial required data."""
@@ -25,7 +26,7 @@ def seed_database():
             departments
         )
     except sqlite3.IntegrityError:
-        pass # Departments already exist
+        pass
         
     # Seed Sample Students
     students = [
@@ -43,50 +44,75 @@ def seed_database():
                 student
             )
         except sqlite3.IntegrityError:
-            pass # Student already exists
+            pass
 
-    # Seed Sample Grievances (so the Admin Dashboard looks populated)
+    # Dummy extracted info to simulate AI extraction
+    extracted_hostel = json.dumps({
+        "issue": "Water supply disrupted",
+        "location": "Hostel Block A",
+        "duration": "over 24 hours",
+        "affected_count": 50,
+        "equipment_or_service": "water supply",
+        "has_deadline_pressure": False,
+        "sentiment": "angry",
+        "safety_risk": True,
+        "root_cause_hypothesis": "Main water line burst or pump failure."
+    })
+    
+    extracted_it = json.dumps({
+        "issue": "Pink tint on projector",
+        "location": "Room 301",
+        "duration": "unknown",
+        "affected_count": 0,
+        "equipment_or_service": "projector",
+        "has_deadline_pressure": False,
+        "sentiment": "calm",
+        "safety_risk": False,
+        "root_cause_hypothesis": "VGA/HDMI cable loose or bulb failing."
+    })
+
+    conf_high = json.dumps({"category_confidence": 95, "priority_score": 60, "priority_factors": ["Safety hazard detected", "50 students affected"]})
+    conf_med = json.dumps({"category_confidence": 80, "priority_score": 15, "priority_factors": []})
+
+    # Seed Sample Grievances (now including the intelligence columns)
     grievances = [
-        ('GRV-DEMO01', 'STU002', 'The library AC is not working and it is extremely hot inside. Students cannot concentrate on studies.',
+        ('GRV-DEMO01', 'STU002', 'The library AC is not working and it is extremely hot inside.',
          'Facilities', 'Medium', 'Maintenance Department', 'Central Library', 'Submitted',
-         'Identified as a Facilities issue. Medium priority as it affects comfort but not safety.'),
+         'Priority Score: 10', '{}', conf_med, 0, 0),
 
-        ('GRV-DEMO02', 'STU003', 'My semester fee payment was deducted twice from my bank account but the portal still shows unpaid.',
+        ('GRV-DEMO02', 'STU003', 'My semester fee payment was deducted twice.',
          'Finance', 'High', 'Finance Office', 'Admin Block', 'In Progress',
-         'Financial double-deduction is a High priority issue requiring urgent verification.'),
+         'Priority Score: 30', '{}', conf_med, 0, 0),
 
         ('GRV-DEMO03', 'STU001', 'The hostel water supply has been disrupted since yesterday morning. Over 50 students are affected.',
          'Hostel', 'Critical', 'Hostel Administration', 'Hostel Block A', 'Escalated',
-         'Critical: Water supply disruption affecting 50+ students for over 24 hours. Safety concern.'),
+         'Priority Score: 60', extracted_hostel, conf_high, 1, 0),
 
-        ('GRV-DEMO04', 'STU004', 'I lost my library card last week and need a replacement. The library staff said I need to apply online.',
+        ('GRV-DEMO04', 'STU004', 'I lost my library card last week and need a replacement.',
          'Library', 'Low', 'Library Administration', 'Central Library', 'Resolved',
-         'Low priority administrative request for library card replacement.'),
+         'Priority Score: 0', '{}', conf_med, 0, 0),
 
-        ('GRV-DEMO05', 'STU005', 'The projector in Room 301 is not displaying colors correctly. It has a pink tint on the screen.',
+        ('GRV-DEMO05', 'STU005', 'The projector in Room 301 is not displaying colors correctly. It has a pink tint.',
          'Facilities', 'Medium', 'Maintenance Department', 'Academic Block C, Room 301', 'Assigned',
-         'Medium priority: Classroom equipment malfunction affecting lecture quality.'),
+         'Priority Score: 15', extracted_it, conf_med, 0, 1), # 1 for needs_review to test UI
     ]
 
     for g in grievances:
         try:
             cursor.execute(
                 '''INSERT INTO grievances (ticket_id, student_id, complaint_text, category, priority, 
-                   department, location, status, ai_reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                   department, location, status, ai_reason, extracted_info, confidence, safety_flag, needs_review) 
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 g
             )
         except sqlite3.IntegrityError:
-            pass # Grievance already exists
+            pass
 
-    # Seed some update history for the demo grievances
+    # Seed update history
     updates = [
-        # GRV-DEMO02: Submitted -> In Progress
         (2, 'Submitted', 'In Progress', 'Finance team is verifying the bank transaction records.'),
-        # GRV-DEMO03: Submitted -> Escalated
         (3, 'Submitted', 'Escalated', 'Unresolved for 24+ hours. Escalated to Hostel Warden.'),
-        # GRV-DEMO04: Submitted -> Resolved
         (4, 'Submitted', 'Resolved', 'Replacement library card issued successfully.'),
-        # GRV-DEMO05: Submitted -> Assigned
         (5, 'Submitted', 'Assigned', 'Assigned to AV technician Mr. Sharma.'),
     ]
 
@@ -101,7 +127,7 @@ def seed_database():
 
     conn.commit()
     conn.close()
-    print("Database seeded successfully with sample data.")
+    print("Database seeded successfully with sample AI data.")
 
 if __name__ == '__main__':
     seed_database()

@@ -47,6 +47,10 @@ def init_db():
             location TEXT,
             status TEXT NOT NULL,
             ai_reason TEXT,
+            extracted_info TEXT,
+            confidence TEXT,
+            safety_flag INTEGER DEFAULT 0,
+            needs_review INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (student_id) REFERENCES students (id)
@@ -66,8 +70,21 @@ def init_db():
         )
     ''')
     
+    # Migrate existing databases: add new columns if they don't exist
+    _safe_add_column(cursor, 'grievances', 'extracted_info', 'TEXT')
+    _safe_add_column(cursor, 'grievances', 'confidence', 'TEXT')
+    _safe_add_column(cursor, 'grievances', 'safety_flag', 'INTEGER DEFAULT 0')
+    _safe_add_column(cursor, 'grievances', 'needs_review', 'INTEGER DEFAULT 0')
+    
     conn.commit()
     conn.close()
+
+def _safe_add_column(cursor, table, column, col_type):
+    """Adds a column to a table only if it doesn't already exist."""
+    try:
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+    except Exception:
+        pass  # Column already exists
 
 def execute_query(query, params=()):
     """Executes a query that doesn't return data (INSERT, UPDATE, DELETE)."""
