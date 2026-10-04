@@ -39,21 +39,21 @@ def login_screen():
             
             with tab1:
                 st.markdown("### Student Access")
-                st.caption("Log in with your college ID (e.g., STU001, STU002)")
-                stu_id = st.text_input("Student ID")
+                st.caption("Log in with your college email (e.g., alice@college.edu)")
+                stu_email = st.text_input("Student Email Address")
                 if st.button("Login as Student", type="primary", use_container_width=True):
-                    if stu_id.strip():
-                        # Verify student exists in DB
-                        student = fetch_one("SELECT * FROM students WHERE id = ?", (stu_id.strip().upper(),))
+                    if stu_email.strip():
+                        # Verify student exists in DB by email
+                        student = fetch_one("SELECT * FROM students WHERE LOWER(email) = ?", (stu_email.strip().lower(),))
                         if student:
                             st.session_state.logged_in = True
                             st.session_state.user_role = "Student"
                             st.session_state.student_id = student['id']
                             st.rerun()
                         else:
-                            st.error("Invalid Student ID. Please try again.")
+                            st.error("Email not found in the student database. Please try again.")
                     else:
-                        st.warning("Please enter your Student ID.")
+                        st.warning("Please enter your email address.")
             
             with tab2:
                 st.markdown("### Administrator Access")
