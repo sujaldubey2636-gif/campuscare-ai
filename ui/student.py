@@ -3,7 +3,7 @@ import json
 from agent.grievance_agent import GrievanceAgent
 from database.db import fetch_all, fetch_one
 
-def render_student_dashboard():
+def render_student_dashboard(logged_in_student_id: str):
     st.title("🎓 CampusCare AI")
     st.markdown("👋 **Welcome to the intelligent campus support portal.** Describe your issue naturally, and our AI will route it to the correct department instantly.")
     st.markdown("---")
@@ -13,23 +13,19 @@ def render_student_dashboard():
     with tab1:
         st.subheader("How can we help you today?")
 
+        # Show Student Profile first since they are logged in
+        student = fetch_one("SELECT * FROM students WHERE id = ?", (logged_in_student_id,))
+        if student:
+            st.info(f"👤 **Identified Student:** {student['name']} ({student['course']}, Year {student['year']})")
+        
         with st.container(border=True):
             with st.form("grievance_form"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    student_id = st.text_input("🆔 Student ID", placeholder="e.g., STU001")
-                with col2:
-                    location = st.text_input("📍 Location", placeholder="e.g., Hostel Block B, Room 102")
+                location = st.text_input("📍 Location", placeholder="e.g., Hostel Block B, Room 102")
                 complaint = st.text_area("🗣️ Describe your problem in detail", height=100, placeholder="The internet on our floor has been disconnecting frequently since yesterday...")
                 submit_btn = st.form_submit_button("🚀 Analyze & Submit", use_container_width=True)
 
-        # Show Student Profile
-        if student_id:
-            student = fetch_one("SELECT * FROM students WHERE id = ?", (student_id.strip(),))
-            if student:
-                st.info(f"👤 **Identified Student:** {student['name']} ({student['course']}, Year {student['year']})")
-            elif student_id.strip():
-                st.caption("⚠️ Student ID not found. You can still submit.")
+        # We don't need a separate student_id input anymore, we use the logged_in_student_id
+        student_id = logged_in_student_id
 
         # ── Handle follow-up question flow ──
         if 'follow_up_state' not in st.session_state:
