@@ -25,6 +25,7 @@ from agent.tools import (
     get_student_history,
     create_grievance_ticket,
     link_to_existing_grievance,
+    search_college_policy,
     SAFETY_KEYWORDS,
     DEPARTMENT_MAP,
 )
@@ -86,8 +87,11 @@ Read the complaint carefully. If the complaint is too vague to classify properly
 a short, helpful follow-up question. Do NOT call any tools yet.
 Only ask ONE follow-up question maximum. Keep it specific and actionable.
 
-STEP 2 — ANALYZE
-If the complaint has enough detail, call `analyze_complaint` with these arguments:
+STEP 2 — POLICY CHECK (RAG)
+Call `search_college_policy` with a keyword based on the student's issue to check if there is an official college rule governing it (e.g., refunds, library fines, hostel leave).
+
+STEP 3 — ANALYZE
+Call `analyze_complaint` with these arguments:
 - complaint_text: the original text
 - category: your best classification (Academic/Examination/Hostel/Finance/IT/Library/Transport/Facilities/Security/Other)
 - category_confidence: how confident you are (0-100)
@@ -100,25 +104,28 @@ If the complaint has enough detail, call `analyze_complaint` with these argument
 - has_deadline_pressure: true if exams/deadlines are mentioned
 - safety_risk_detected: true if there is ANY potential physical danger
 - root_cause_hypothesis: your best guess at the underlying cause (present as hypothesis, not fact)
+- applicable_policy: the exact text of the policy returned by search_college_policy (if any)
 
-STEP 3 — CHECK HISTORY & DUPLICATES
+STEP 4 — CHECK HISTORY & DUPLICATES
 After analyzing, call `get_student_history` to check if this student has prior related issues.
 Then call `check_duplicate_complaints` to see if a similar complaint already exists.
 
-STEP 4 — ACT
+STEP 5 — ACT
 Based on the analysis and duplicate check results:
 - If a duplicate exists (is_duplicate=True): call `link_to_existing_grievance`
 - If no duplicate: call `create_grievance_ticket` using the data from your analysis result.
   Pass ALL fields from the analyze_complaint result (category, priority, department, ai_reason,
   extracted_info, confidence, safety_flag, needs_review).
 
-STEP 5 — RESPOND
+STEP 6 — RESPOND
 After acting, provide a brief, empathetic student-facing summary. Mention the ticket ID.
 If there's a safety concern, clearly recommend the student also contact campus security directly.
+If an official policy applies to their case, clearly mention the policy in your response so the student is immediately informed.
 """
 
         # All tools the agent can call
         tools = [
+            search_college_policy,
             analyze_complaint,
             check_duplicate_complaints,
             get_student_history,
@@ -136,7 +143,7 @@ If there's a safety concern, clearly recommend the student also contact campus s
             f"Student ID: {student_id}\n"
             f"Location: {location}\n"
             f"Complaint: {complaint_text}\n\n"
-            f"Follow your workflow: understand → analyze → check history → check duplicates → act."
+            f"Follow your workflow: understand → policy check → analyze → check history → check duplicates → act."
         )
 
         chat = self.client.chats.create(model=self.model_id, config=config)
@@ -147,15 +154,17 @@ If there's a safety concern, clearly recommend the student also contact campus s
         final_ticket_info = None
         follow_up_question = None
 
-        # The agent may need several turns (analyze → check dup → create ticket)
-        for _ in range(6):
+        # The agent may need several turns
+        for _ in range(8):
             if response.function_calls:
                 for fc in response.function_calls:
                     name = fc.name
                     args = fc.args
 
                     # Execute the tool
-                    if name == "analyze_complaint":
+                    if name == "search_college_policy":
+                        result = search_college_policy(**args)
+                    elif name == "analyze_complaint":
                         result = analyze_complaint(**args)
                         analysis_result = result
                     elif name == "check_duplicate_complaints":

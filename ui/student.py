@@ -175,6 +175,13 @@ def _display_result(result):
     if extracted:
         try:
             info = json.loads(extracted) if isinstance(extracted, str) else extracted
+            
+            # ── Policy Checker (RAG) ──
+            policy = info.get("applicable_policy")
+            if policy:
+                st.markdown("### 📖 Official College Policy Match")
+                st.info(f"The AI found a relevant rule in the College Rulebook:\n\n*{policy}*\n\nYour ticket has still been routed to the department, but please note this official policy.")
+            
             st.markdown("### 🔎 Extracted Information")
             with st.container(border=True):
                 e_col1, e_col2, e_col3 = st.columns(3)

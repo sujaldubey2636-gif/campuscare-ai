@@ -95,6 +95,10 @@ def render_admin_dashboard():
                     if extracted:
                         try:
                             info = json.loads(extracted) if isinstance(extracted, str) else extracted
+                            
+                            if info.get('applicable_policy'):
+                                st.info(f"📖 **Applicable Policy matched by AI:**\n{info['applicable_policy']}")
+                            
                             with st.expander("🔎 AI Extracted Information", expanded=False):
                                 e1, e2, e3 = st.columns(3)
                                 e1.write(f"**Issue:** {info.get('issue', 'N/A')}")

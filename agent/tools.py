@@ -48,6 +48,50 @@ DEPARTMENT_MAP = {
 }
 
 
+def search_college_policy(query_topic: str) -> dict:
+    """
+    Search the official CampusCare College Rulebook for policies matching the student's issue.
+    Call this to check if a student's request is governed by a strict college rule 
+    (e.g., refund policies, library fines, hostel curfews).
+
+    Args:
+        query_topic: A short phrase describing the rule to look up (e.g., 'fee refund', 'hostel curfew').
+
+    Returns:
+        dict with the most relevant policy text, or a message if no policy was found.
+    """
+    import os
+    rulebook_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'college_rulebook.md')
+    
+    if not os.path.exists(rulebook_path):
+        return {"policy_found": False, "message": "Rulebook not found."}
+        
+    try:
+        with open(rulebook_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        sections = content.split('##')
+        best_section = None
+        
+        query_lower = query_topic.lower()
+        # Basic keyword match against sections
+        for section in sections[1:]: # Skip the main title
+            if any(word in section.lower() for word in query_lower.split()):
+                best_section = section.strip()
+                break # Just grab the first matching section for simplicity
+                
+        if best_section:
+            return {
+                "policy_found": True, 
+                "policy_text": best_section,
+                "message": f"Found matching policy in section: {best_section.splitlines()[0]}"
+            }
+        else:
+            return {"policy_found": False, "message": "No specific policy found for this query."}
+    except Exception as e:
+        return {"policy_found": False, "message": f"Error reading policy: {str(e)}"}
+
+
 def analyze_complaint(
     complaint_text: str,
     category: str,
@@ -61,6 +105,7 @@ def analyze_complaint(
     has_deadline_pressure: bool = False,
     safety_risk_detected: bool = False,
     root_cause_hypothesis: str = "",
+    applicable_policy: str = "",
 ) -> dict:
     """
     Analyze a student's complaint and compute structured information and priority.
@@ -80,6 +125,7 @@ def analyze_complaint(
         has_deadline_pressure: True if the student mentions exams, deadlines, or submissions.
         safety_risk_detected: True if the complaint involves any potential safety hazard.
         root_cause_hypothesis: AI's best guess at the underlying technical/admin cause.
+        applicable_policy: If a college rule applies, the exact text of the rule.
 
     Returns:
         dict with priority, department, safety_flag, confidence, extracted_info, needs_review, ai_reason.
@@ -164,6 +210,7 @@ def analyze_complaint(
         "sentiment": sentiment,
         "safety_risk": is_safety,
         "root_cause_hypothesis": root_cause_hypothesis,
+        "applicable_policy": applicable_policy,
     }
 
     # ── BUILD AI REASON ──
