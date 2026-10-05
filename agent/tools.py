@@ -116,7 +116,7 @@ def analyze_complaint(
         complaint_text: The original complaint text.
         category: One of Academic, Examination, Hostel, Finance, IT, Library, Transport, Facilities, Security, Other.
         category_confidence: How confident the AI is about the category (0-100).
-        sentiment: One of calm, frustrated, angry, panicked.
+        sentiment: One of: 'panicked', 'angry', 'frustrated', 'polite', or 'calm'.
         issue: A short summary of the core problem (e.g., "Wi-Fi outage").
         location: Where on campus the issue is (e.g., "Block B, Floor 3").
         duration: How long the issue has persisted (e.g., "since yesterday").
@@ -177,19 +177,19 @@ def analyze_complaint(
     sentiment_lower = (sentiment or "").lower()
     
     # 6a. Panicked / Extreme Distress tone
-    if sentiment_lower in ["panicked", "distressed", "desperate"] or any(w in text_lower for w in ["terrified", "panic", "emergency", "screwed", "crying", "ruined"]):
+    if any(kw in sentiment_lower for kw in ["panicked", "distress", "desperate"]) or any(w in text_lower for w in ["terrified", "panic", "emergency", "screwed", "crying", "ruined"]):
         score += 15
         factors.append("High distress / panicked tone detected (+15)")
     # 6b. Angry / Escalation tone
-    elif sentiment_lower in ["angry", "furious", "outraged"] or any(w in text_lower for w in ["unacceptable", "furious", "ridiculous", "worst", "fed up", "disaster"]):
+    elif any(kw in sentiment_lower for kw in ["angry", "furious", "outrage"]) or any(w in text_lower for w in ["unacceptable", "furious", "ridiculous", "worst", "fed up", "disaster"]):
         score += 10
         factors.append("Angry / escalation tone detected (+10)")
     # 6c. Frustrated tone
-    elif sentiment_lower in ["frustrated", "annoyed"] or any(w in text_lower for w in ["frustrated", "annoyed", "sick of", "tired of", "still broken", "again"]):
+    elif any(kw in sentiment_lower for kw in ["frustrat", "annoy"]) or any(w in text_lower for w in ["frustrated", "annoyed", "sick of", "tired of", "still broken", "again"]):
         score += 5
         factors.append("Frustrated tone detected (+5)")
     # 6d. Relaxed / Low-urgency tone
-    elif sentiment_lower in ["polite", "casual", "relaxed"] or any(w in text_lower for w in ["no rush", "whenever you get time", "minor issue", "small suggestion", "no urgency"]):
+    elif any(kw in sentiment_lower for kw in ["polite", "casual", "relax"]) or any(w in text_lower for w in ["no rush", "whenever you get time", "minor issue", "small suggestion", "no urgency"]):
         score -= 5
         factors.append("Relaxed / low-urgency tone detected (-5)")
 
