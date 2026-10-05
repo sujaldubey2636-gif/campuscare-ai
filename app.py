@@ -76,12 +76,39 @@ def main():
         
         if st.session_state.user_role == "Student":
             st.sidebar.success(f"Logged in as: **Student ({st.session_state.student_id})**")
+            
+            # Fast-switch to Admin
+            with st.sidebar.expander("⚙️ Switch to Admin Portal"):
+                st.caption("Enter admin password to switch views:")
+                switch_pass = st.text_input("Password", type="password", key="switch_admin_pass")
+                if st.button("Switch to Admin", use_container_width=True, key="btn_switch_admin"):
+                    if switch_pass == "admin123":
+                        st.session_state.user_role = "Admin"
+                        st.session_state.student_id = None
+                        st.session_state.follow_up_state = None
+                        st.rerun()
+                    else:
+                        st.error("Incorrect password.")
         else:
             st.sidebar.error("Logged in as: **Administrator**")
             
+            # Fast-switch to Student
+            with st.sidebar.expander("👨‍🎓 Switch to Student Portal"):
+                st.caption("Enter student email to switch views:")
+                switch_email = st.text_input("Email", key="switch_stu_email")
+                if st.button("Switch to Student", use_container_width=True, key="btn_switch_stu"):
+                    student = fetch_one("SELECT * FROM students WHERE LOWER(email) = ?", (switch_email.strip().lower(),))
+                    if student:
+                        st.session_state.user_role = "Student"
+                        st.session_state.student_id = student['id']
+                        st.session_state.follow_up_state = None
+                        st.rerun()
+                    else:
+                        st.error("Email not found.")
+            
         st.sidebar.markdown("---")
         
-        if st.sidebar.button("🚪 Logout", use_container_width=True):
+        if st.sidebar.button("🚪 Logout completely", use_container_width=True):
             st.session_state.logged_in = False
             st.session_state.user_role = None
             st.session_state.student_id = None
