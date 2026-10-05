@@ -47,7 +47,7 @@ class GrievanceAgent:
             print("Warning: GEMINI_API_KEY is not set. Agent will run in fallback/demo mode.")
         else:
             self.client = genai.Client(api_key=api_key)
-            self.model_id = os.environ.get("MODEL_NAME", "gemini-2.5-flash")
+            self.model_id = os.environ.get("MODEL_NAME", "gemini-3.8-flash")
 
     # ──────────────────────────────────────────────────────
     # MAIN ENTRY POINT
