@@ -84,10 +84,9 @@ def render_admin_dashboard():
 
             if selected_ticket:
                 matching_records = filtered_df[filtered_df['ticket_id'] == selected_ticket]
-                if not matching_records.empty:
-                    ticket_data = matching_records.iloc[0]
+                ticket_data = matching_records.iloc[0] if not matching_records.empty else filtered_df.iloc[0]
 
-                    with st.container(border=True):
+                with st.container(border=True):
                     st.write(f"**👤 Student ID:** {ticket_data['student_id']}")
                     st.write(f"**📝 Complaint:** {ticket_data['complaint_text']}")
                     st.write(f"**🤖 AI Reason:** {ticket_data['ai_reason']}")
