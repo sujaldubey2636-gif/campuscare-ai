@@ -4,6 +4,8 @@ import pandas as pd
 from database.db import fetch_all, execute_query
 from agent.tools import get_campus_insights, DEPARTMENT_MAP
 
+import os
+
 def render_admin_dashboard():
     st.title("⚙️ Admin Control Panel")
     st.markdown("Manage and monitor all campus grievances in one place.")
@@ -17,37 +19,36 @@ def render_admin_dashboard():
     df = pd.DataFrame(all_grievances)
 
     tab1, tab2, tab3, tab4 = st.tabs([
-        "📊 Analytics", "📋 Manage Tickets", "🚨 Escalations & Review", "🧠 Campus Insights"
+        "📚 AI Policy Manager", "📋 Manage Tickets", "🚨 Escalations & Review", "🧠 Campus Insights"
     ])
 
     # ──────────────────────────────────────────
-    # TAB 1: Analytics
+    # TAB 1: AI Policy Manager (Dynamic RAG)
     # ──────────────────────────────────────────
     with tab1:
-        st.subheader("Campus Operations Health")
-        col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("Total", len(df))
-        col2.metric("Pending", len(df[df['status'].isin(['Submitted', 'Assigned', 'In Progress'])]))
-        col3.metric("High/Critical", len(df[df['priority'].isin(['High', 'Critical'])]))
-        col4.metric("Escalated", len(df[df['status'] == 'Escalated']))
-        col5.metric("Resolved", len(df[df['status'] == 'Resolved']))
-
-        st.markdown("---")
-        chart_col1, chart_col2 = st.columns(2)
-        with chart_col1:
-            st.markdown("**Complaints by Category**")
-            st.bar_chart(df['category'].value_counts())
-        with chart_col2:
-            st.markdown("**Complaints by Priority**")
-            st.bar_chart(df['priority'].value_counts())
-
-        chart_col3, chart_col4 = st.columns(2)
-        with chart_col3:
-            st.markdown("**Complaints by Department**")
-            st.bar_chart(df['department'].value_counts())
-        with chart_col4:
-            st.markdown("**Status Distribution**")
-            st.bar_chart(df['status'].value_counts())
+        st.subheader("📚 Dynamic Policy & Knowledge Base (RAG)")
+        st.write("Edit the official college rulebook below. The CampusCare AI Agent will **instantly adapt** to these new rules in real-time when interacting with students.")
+        
+        rulebook_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'college_rulebook.md')
+        
+        # Read current policy
+        if os.path.exists(rulebook_path):
+            with open(rulebook_path, 'r', encoding='utf-8') as f:
+                current_policy = f.read()
+        else:
+            current_policy = "# CampusCare Official College Rulebook\n\nAdd your rules here..."
+            
+        with st.form("policy_form"):
+            updated_policy = st.text_area("Live Rulebook Editor (Markdown supported):", value=current_policy, height=350)
+            st.caption("💡 Tip: Try adding a fake rule and then switch to the Student Portal to see the AI use it instantly!")
+            save_btn = st.form_submit_button("💾 Save & Update AI Knowledge Base", use_container_width=True)
+            
+        if save_btn:
+            os.makedirs(os.path.dirname(rulebook_path), exist_ok=True)
+            with open(rulebook_path, 'w', encoding='utf-8') as f:
+                f.write(updated_policy)
+            st.toast("✅ AI Knowledge Base Updated!", icon="🧠")
+            st.success("Rulebook saved successfully. The AI Agent's RAG engine is now using these new rules.")
 
     # ──────────────────────────────────────────
     # TAB 2: Manage Tickets
