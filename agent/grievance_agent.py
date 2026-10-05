@@ -64,17 +64,26 @@ class GrievanceAgent:
         if not self.client:
             return self._fallback_mode(student_id, complaint_text, location)
 
-        try:
-            return self._agentic_loop(student_id, complaint_text, location)
-        except Exception as e:
-            print(f"Agent error: {e}. Falling back to deterministic mode.")
-            return self._fallback_mode(student_id, complaint_text, location)
+        # Resilient Model Failover: Try primary model first, then fallback to flash-latest if spike/error occurs
+        candidate_models = [self.model_id, "gemini-flash-latest", "gemini-3.8-flash"]
+        # Remove duplicates while preserving order
+        candidate_models = list(dict.fromkeys(candidate_models))
+
+        for model in candidate_models:
+            try:
+                return self._agentic_loop(student_id, complaint_text, location, active_model=model)
+            except Exception as e:
+                print(f"Agent warning with {model}: {e}. Trying next candidate...")
+
+        print("All remote model candidates encountered errors. Engaging deterministic fallback mode.")
+        return self._fallback_mode(student_id, complaint_text, location)
 
     # ──────────────────────────────────────────────────────
     # AGENTIC LOOP (Gemini with Tool Calling)
     # ──────────────────────────────────────────────────────
 
-    def _agentic_loop(self, student_id: str, complaint_text: str, location: str):
+    def _agentic_loop(self, student_id: str, complaint_text: str, location: str, active_model: str = None):
+        target_model = active_model or self.model_id
         system_instruction = """
 You are CampusCare AI, an advanced college grievance resolution agent.
 You act as an intelligent campus administrator who THINKS before acting.
@@ -143,10 +152,10 @@ If an official policy applies to their case, clearly mention the policy in your 
             f"Student ID: {student_id}\n"
             f"Location: {location}\n"
             f"Complaint: {complaint_text}\n\n"
-            f"Follow your workflow: understand → policy check → analyze → check history → check duplicates → act."
+            f"Follow your workflow: understand -> policy check -> analyze -> check history -> check duplicates -> act."
         )
 
-        chat = self.client.chats.create(model=self.model_id, config=config)
+        chat = self.client.chats.create(model=target_model, config=config)
         response = chat.send_message(prompt)
 
         # Track state across tool-calling turns

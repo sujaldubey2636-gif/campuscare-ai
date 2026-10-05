@@ -249,28 +249,30 @@ def render_admin_dashboard():
             st.markdown("---")
             if not df.empty:
                 import plotly.express as px
-                
-                c1, c2 = st.columns(2)
-                
-                with c1:
-                    fig_cat = px.pie(df, names='category', hole=0.4, title='Complaints by Category', 
-                                     color_discrete_sequence=px.colors.qualitative.Pastel)
-                    fig_cat.update_layout(margin=dict(t=40, b=10, l=10, r=10))
-                    st.plotly_chart(fig_cat, use_container_width=True)
+                try:
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        fig_cat = px.pie(df, names='category', hole=0.4, title='Complaints by Category', 
+                                         color_discrete_sequence=px.colors.qualitative.Pastel)
+                        fig_cat.update_layout(margin=dict(t=40, b=10, l=10, r=10))
+                        st.plotly_chart(fig_cat, use_container_width=True)
+                        
+                    with c2:
+                        fig_stat = px.pie(df, names='status', hole=0.4, title='Current Ticket Statuses',
+                                          color_discrete_sequence=px.colors.sequential.Teal)
+                        fig_stat.update_layout(margin=dict(t=40, b=10, l=10, r=10))
+                        st.plotly_chart(fig_stat, use_container_width=True)
                     
-                with c2:
-                    fig_stat = px.pie(df, names='status', hole=0.4, title='Current Ticket Statuses',
-                                      color_discrete_sequence=px.colors.sequential.Teal)
-                    fig_stat.update_layout(margin=dict(t=40, b=10, l=10, r=10))
-                    st.plotly_chart(fig_stat, use_container_width=True)
-                
-                st.markdown("---")
-                priority_dept_df = df.groupby(['department', 'priority']).size().reset_index(name='count')
-                fig_bar = px.bar(priority_dept_df, x='department', y='count', color='priority', 
-                                 title='Priority Levels Across Departments',
-                                 barmode='stack',
-                                 color_discrete_map={'Critical': '#EF4444', 'High': '#F97316', 'Medium': '#EAB308', 'Low': '#22C55E'})
-                st.plotly_chart(fig_bar, use_container_width=True)
+                    st.markdown("---")
+                    if 'department' in df.columns and 'priority' in df.columns:
+                        priority_dept_df = df.groupby(['department', 'priority']).size().reset_index(name='count')
+                        fig_bar = px.bar(priority_dept_df, x='department', y='count', color='priority', 
+                                         title='Priority Levels Across Departments',
+                                         barmode='stack',
+                                         color_discrete_map={'Critical': '#EF4444', 'High': '#F97316', 'Medium': '#EAB308', 'Low': '#22C55E'})
+                        st.plotly_chart(fig_bar, use_container_width=True)
+                except Exception as chart_err:
+                    st.caption(f"Charts unavailable for current data slice: {chart_err}")
 
 
 def _get_suggested_response(category, priority):

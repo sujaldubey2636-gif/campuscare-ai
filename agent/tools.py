@@ -220,7 +220,7 @@ def analyze_complaint(
     ]
     if root_cause_hypothesis:
         reason_parts.append(f"Hypothesis: {root_cause_hypothesis}")
-    reason_parts.append(f"Priority Score: {score}/100 ({' → '.join(factors) if factors else 'No escalation factors'})")
+    reason_parts.append(f"Priority Score: {score}/100 ({' -> '.join(factors) if factors else 'No escalation factors'})")
     if is_safety:
         reason_parts.append("⚠️ SAFETY FLAG: Immediate human review recommended")
     if needs_review:
