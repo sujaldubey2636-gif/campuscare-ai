@@ -30,17 +30,17 @@ def seed_database():
         
     # Seed Sample Students
     students = [
-        ('STU001', 'Alice Smith', 'alice@college.edu', 'B.Tech CS', 2),
-        ('STU002', 'Bob Johnson', 'bob@college.edu', 'B.Tech Mechanical', 3),
-        ('STU003', 'Charlie Brown', 'charlie@college.edu', 'BCA', 1),
-        ('STU004', 'Diana Patel', 'diana@college.edu', 'B.Tech ECE', 2),
-        ('STU005', 'Ethan Kumar', 'ethan@college.edu', 'B.Tech IT', 4),
+        ('STU001', 'Alice Smith', 'alice@college.edu', 'pass123', 'B.Tech CS', 2),
+        ('STU002', 'Bob Johnson', 'bob@college.edu', 'pass123', 'B.Tech Mechanical', 3),
+        ('STU003', 'Charlie Brown', 'charlie@college.edu', 'pass123', 'BCA', 1),
+        ('STU004', 'Diana Patel', 'diana@college.edu', 'pass123', 'B.Tech ECE', 2),
+        ('STU005', 'Ethan Kumar', 'ethan@college.edu', 'pass123', 'B.Tech IT', 4),
     ]
     
     for student in students:
         try:
             cursor.execute(
-                'INSERT INTO students (id, name, email, course, year) VALUES (?, ?, ?, ?, ?)',
+                'INSERT INTO students (id, name, email, password, course, year) VALUES (?, ?, ?, ?, ?, ?)',
                 student
             )
         except sqlite3.IntegrityError:

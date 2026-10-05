@@ -29,6 +29,7 @@ def init_db():
             id TEXT PRIMARY KEY, -- Using string for ID like STU001
             name TEXT NOT NULL,
             email TEXT NOT NULL,
+            password TEXT NOT NULL DEFAULT 'pass123',
             course TEXT NOT NULL,
             year INTEGER NOT NULL
         )
@@ -71,6 +72,7 @@ def init_db():
     ''')
     
     # Migrate existing databases: add new columns if they don't exist
+    _safe_add_column(cursor, 'students', 'password', "TEXT NOT NULL DEFAULT 'pass123'")
     _safe_add_column(cursor, 'grievances', 'extracted_info', 'TEXT')
     _safe_add_column(cursor, 'grievances', 'confidence', 'TEXT')
     _safe_add_column(cursor, 'grievances', 'safety_flag', 'INTEGER DEFAULT 0')

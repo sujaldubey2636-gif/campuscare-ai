@@ -78,21 +78,22 @@ def login_screen():
             
             with tab1:
                 st.markdown("### Student Access")
-                st.caption("Log in with your college email (e.g., alice@college.edu)")
+                st.caption("Log in with your college email and password")
                 stu_email = st.text_input("Student Email Address")
+                stu_pass = st.text_input("Password", type="password")
                 if st.button("Login as Student", type="primary", use_container_width=True):
-                    if stu_email.strip():
-                        # Verify student exists in DB by email
-                        student = fetch_one("SELECT * FROM students WHERE LOWER(email) = ?", (stu_email.strip().lower(),))
+                    if stu_email.strip() and stu_pass.strip():
+                        # Verify student exists in DB by email and password
+                        student = fetch_one("SELECT * FROM students WHERE LOWER(email) = ? AND password = ?", (stu_email.strip().lower(), stu_pass.strip()))
                         if student:
                             st.session_state.logged_in = True
                             st.session_state.user_role = "Student"
                             st.session_state.student_id = student['id']
                             st.rerun()
                         else:
-                            st.error("Email not found in the student database. Please try again.")
+                            st.error("Invalid email or password. Please try again.")
                     else:
-                        st.warning("Please enter your email address.")
+                        st.warning("Please enter both email and password.")
             
             with tab2:
                 st.markdown("### Administrator Access")
@@ -133,17 +134,18 @@ def main():
             
             # Fast-switch to Student
             with st.sidebar.expander("👨‍🎓 Switch to Student Portal"):
-                st.caption("Enter student email to switch views:")
+                st.caption("Enter student credentials to switch views:")
                 switch_email = st.text_input("Email", key="switch_stu_email")
+                switch_pass = st.text_input("Password", type="password", key="switch_stu_pass")
                 if st.button("Switch to Student", use_container_width=True, key="btn_switch_stu"):
-                    student = fetch_one("SELECT * FROM students WHERE LOWER(email) = ?", (switch_email.strip().lower(),))
+                    student = fetch_one("SELECT * FROM students WHERE LOWER(email) = ? AND password = ?", (switch_email.strip().lower(), switch_pass.strip()))
                     if student:
                         st.session_state.user_role = "Student"
                         st.session_state.student_id = student['id']
                         st.session_state.follow_up_state = None
                         st.rerun()
                     else:
-                        st.error("Email not found.")
+                        st.error("Invalid email or password.")
             
         st.sidebar.markdown("---")
         
