@@ -164,7 +164,10 @@ def render_admin_dashboard():
                             "INSERT INTO grievance_updates (grievance_id, old_status, new_status, note) VALUES (?, ?, ?, ?)",
                             (ticket_data['id'], ticket_data['status'], new_status, note if note else f"Category overridden to {override_category}")
                         )
+                        st.toast(f"Ticket {selected_ticket} updated to {new_status}!", icon="🚀")
                         st.success(f"Ticket {selected_ticket} updated to {new_status} (Category: {override_category})!")
+                        import time
+                        time.sleep(1)
                         st.rerun()
 
                 # Show update history

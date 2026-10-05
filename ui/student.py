@@ -81,20 +81,33 @@ def render_student_dashboard(logged_in_student_id: str):
             if record:
                 r = record[0]
                 with st.container(border=True):
-                    t_col1, t_col2, t_col3 = st.columns(3)
+                    # ── Visual Status Timeline ──
                     status = r['status']
-                    if status == 'Resolved':
-                        t_col1.success(f"**Status:** {status} ✅")
-                    elif status == 'Escalated':
-                        t_col1.error(f"**Status:** {status} 🚨")
-                    elif status in ['In Progress', 'Assigned']:
-                        t_col1.warning(f"**Status:** {status} 🔄")
+                    stages = ["Submitted", "Assigned", "In Progress", "Resolved"]
+                    
+                    if status == "Escalated":
+                        st.error("🚨 This ticket has been **Escalated** for urgent review.")
+                        st.progress(0.75)
+                    elif status == "Rejected":
+                        st.warning("🚫 This ticket was **Rejected**.")
+                        st.progress(1.0)
                     else:
-                        t_col1.info(f"**Status:** {status} 📥")
-                    t_col2.write(f"**🏢 Department:** {r['department']}")
+                        try:
+                            progress_idx = stages.index(status)
+                            progress_val = (progress_idx + 1) / len(stages)
+                            st.progress(progress_val)
+                            st.caption(f"**Current Stage:** {status} (Step {progress_idx + 1} of 4)")
+                        except ValueError:
+                            st.info(f"**Status:** {status}")
+                    
+                    t_col1, t_col2, t_col3 = st.columns(3)
+                    t_col1.write(f"**🏢 Department:** {r['department']}")
+                    t_col2.write(f"**📌 Category:** {r['category']}")
                     t_col3.write(f"**📅 Submitted:** {r['created_at'][:10]}")
-                    st.markdown(f"**📝 Issue:** {r['complaint_text']}")
-                    st.markdown(f"**🤖 AI Assessment:** {r['ai_reason']}")
+                    
+                    st.markdown("---")
+                    st.markdown(f"**📝 Issue Description:**  \n{r['complaint_text']}")
+                    st.markdown(f"**🤖 AI Assessment:**  \n*{r['ai_reason']}*")
 
                     # Show safety flag
                     if r.get('safety_flag'):
@@ -107,7 +120,7 @@ def render_student_dashboard(logged_in_student_id: str):
                 if history:
                     with st.expander("📜 View Ticket Update History", expanded=True):
                         for h in history:
-                            st.markdown(f"**{h['updated_at']}** — 🔄 `{h['old_status']}` → `{h['new_status']}`  \n*Note: {h['note']}*")
+                            st.markdown(f"**{h['updated_at']}** — 🔄 `{h['old_status']}` ➔ `{h['new_status']}`  \n> *{h['note']}*")
                             st.divider()
             else:
                 st.warning("❌ Ticket ID not found in the system.")
@@ -120,9 +133,27 @@ def render_student_dashboard(logged_in_student_id: str):
             )
             if my_grievances:
                 st.markdown("---")
-                st.subheader(f"📂 Previous Grievances for {student_id}")
-                import pandas as pd
-                st.dataframe(pd.DataFrame(my_grievances), use_container_width=True, hide_index=True)
+                st.subheader(f"📂 Your Grievance History")
+                
+                # Render beautifully as cards instead of a boring table
+                for g in my_grievances:
+                    with st.container(border=True):
+                        c1, c2, c3, c4 = st.columns([2, 2, 2, 2])
+                        c1.markdown(f"**🆔 {g['ticket_id']}**")
+                        c2.markdown(f"🏢 {g['department']}")
+                        
+                        # Add colored status badge
+                        status_str = g['status']
+                        if status_str == 'Resolved':
+                            c3.success("✅ Resolved")
+                        elif status_str == 'Escalated':
+                            c3.error("🚨 Escalated")
+                        elif status_str in ['Assigned', 'In Progress']:
+                            c3.warning(f"🔄 {status_str}")
+                        else:
+                            c3.info(f"📥 {status_str}")
+                            
+                        c4.caption(f"📅 {g['created_at'][:10]}")
 
 
 def _display_result(result):
@@ -132,6 +163,7 @@ def _display_result(result):
         st.error("Something went wrong. Please try again.")
         return
 
+    st.toast("✅ Analysis complete! Ticket processed.", icon="🎉")
     st.success(f"✅ {ticket_info['message']}")
 
     # ── Safety Warning (top priority visibility) ──

@@ -18,6 +18,45 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+def inject_custom_css():
+    st.markdown("""
+    <style>
+        /* Modern Button Styling */
+        .stButton>button[kind="primary"] {
+            background-color: #6366F1; /* Indigo */
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s ease;
+        }
+        .stButton>button[kind="primary"]:hover {
+            background-color: #4F46E5;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+        
+        /* Softer Cards/Containers */
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            border-radius: 12px;
+            border: 1px solid #E5E7EB;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            background-color: #FFFFFF;
+        }
+        
+        /* Main Text Color */
+        .stMarkdown {
+            color: #374151;
+        }
+        
+        /* Hide default Streamlit footer */
+        footer {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+
+inject_custom_css()
+
 # ── SESSION STATE INITIALIZATION ──
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
