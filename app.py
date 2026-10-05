@@ -66,22 +66,38 @@ if 'student_id' not in st.session_state:
     st.session_state.student_id = None
 
 def login_screen():
-    st.markdown("<h1 style='text-align: center;'>🎓 CampusCare AI Portal</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Intelligent Grievance Resolution System</p>", unsafe_allow_html=True)
-    st.markdown("---")
+    # ── HERO SECTION ──
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #4F46E5; font-size: 3.5rem; font-weight: 800; margin-bottom: 0;'>🎓 CampusCare AI</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #6B7280; font-weight: 400; margin-top: 0;'>Autonomous Agentic Grievance Resolution Portal</h3>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, space, col2 = st.columns([1.2, 0.1, 1.0])
+    
+    with col1:
+        st.markdown("### 🚀 Redefining Campus Operations")
+        st.write("CampusCare is not a standard web form. It is an **intelligent autonomous agent** that actively reads, reasons about, and resolves campus issues in real-time.")
+        
+        st.info("""
+        **What makes this system smart?**
+        - 🧠 **Deep Extraction:** The AI extracts the core issue, location, duration, and student sentiment.
+        - ⚖️ **Transparent Priority Scoring:** Urgency is calculated based on strict parameters like safety hazards and affected student count.
+        - 📖 **RAG Policy Engine:** Automatically matches student issues against the official College Rulebook.
+        - 🚨 **Safety Intelligence:** Instantly flags critical hazards (fires, short circuits) for immediate human review.
+        """)
+        st.caption("Powered by Gemini LLM • Agentic Workflow • RAG Architecture")
     
     with col2:
         with st.container(border=True):
-            tab1, tab2 = st.tabs(["👨‍🎓 Student Login", "⚙️ Admin Login"])
+            st.markdown("<h3 style='text-align: center;'>Portal Login</h3>", unsafe_allow_html=True)
+            st.markdown("---")
+            tab1, tab2 = st.tabs(["👨‍🎓 Student Access", "⚙️ Admin Access"])
             
             with tab1:
-                st.markdown("### Student Access")
-                st.caption("Log in with your college email and password")
-                stu_email = st.text_input("Student Email Address")
-                stu_pass = st.text_input("Password", type="password")
-                if st.button("Login as Student", type="primary", use_container_width=True):
+                st.caption("Use your college email and password")
+                stu_email = st.text_input("Student Email Address", placeholder="alice@college.edu")
+                stu_pass = st.text_input("Password", type="password", placeholder="pass123")
+                if st.button("Secure Login", type="primary", use_container_width=True):
                     if stu_email.strip() and stu_pass.strip():
                         # Verify student exists in DB by email and password
                         student = fetch_one("SELECT * FROM students WHERE LOWER(email) = ? AND password = ?", (stu_email.strip().lower(), stu_pass.strip()))
@@ -96,10 +112,9 @@ def login_screen():
                         st.warning("Please enter both email and password.")
             
             with tab2:
-                st.markdown("### Administrator Access")
-                st.caption("Enter the secure admin password (demo: admin123)")
-                admin_pass = st.text_input("Admin Password", type="password")
-                if st.button("Login as Admin", type="primary", use_container_width=True):
+                st.caption("Restricted Administrator Access")
+                admin_pass = st.text_input("Admin Password", type="password", placeholder="admin123")
+                if st.button("Enter Dashboard", type="primary", use_container_width=True):
                     if admin_pass == "admin123":  # Hardcoded for demo purposes
                         st.session_state.logged_in = True
                         st.session_state.user_role = "Admin"
