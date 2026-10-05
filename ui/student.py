@@ -15,21 +15,22 @@ def render_student_dashboard(logged_in_student_id: str):
 
         # Show Student Profile first since they are logged in
         student = fetch_one("SELECT * FROM students WHERE id = ?", (logged_in_student_id,))
+        student_display_name = (student['name'].split()[0]) if (student and student.get('name')) else "Student"
         if student:
-            st.info(f"👤 **Identified Student:** {student['name']} ({student['course']}, Year {student['year']})")
+            st.info(f"👤 **Identified Student:** {student['name']} ({student.get('course', 'Student')}, Year {student.get('year', 'N/A')})")
         
         col_chat1, col_chat2 = st.columns([4, 1])
         with col_chat1:
             st.markdown("### 💬 Chat with CampusCare AI")
         with col_chat2:
             if st.button("🗑️ Clear Chat", use_container_width=True):
-                st.session_state.chat_history = [{"role": "assistant", "content": f"Hi {student['name'].split()[0]}! I am the CampusCare AI. How can I help you today?"}]
+                st.session_state.chat_history = [{"role": "assistant", "content": f"Hi {student_display_name}! I am the CampusCare AI. How can I help you today?"}]
                 st.session_state.follow_up_state = None
                 st.rerun()
         
         # Initialize chat history
-        if "chat_history" not in st.session_state:
-            st.session_state.chat_history = [{"role": "assistant", "content": f"Hi {student['name'].split()[0]}! I am the CampusCare AI. How can I help you today?"}]
+        if "chat_history" not in st.session_state or not st.session_state.chat_history:
+            st.session_state.chat_history = [{"role": "assistant", "content": f"Hi {student_display_name}! I am the CampusCare AI. How can I help you today?"}]
             
         # Display history
         for msg in st.session_state.chat_history:
@@ -71,13 +72,14 @@ def render_student_dashboard(logged_in_student_id: str):
         st.subheader("Track an Existing Ticket")
         track_id = st.text_input("Enter your Ticket ID", placeholder="GRV-XXXXXX")
 
-        if track_id:
-            record = fetch_all("SELECT * FROM grievances WHERE ticket_id = ?", (track_id.strip(),))
+        if track_id and track_id.strip():
+            clean_track_id = track_id.strip()
+            record = fetch_all("SELECT * FROM grievances WHERE UPPER(ticket_id) = UPPER(?)", (clean_track_id,))
             if record:
                 r = record[0]
                 with st.container(border=True):
                     # ── Visual Status Timeline ──
-                    status = r['status']
+                    status = r.get('status', 'Submitted')
                     stages = ["Submitted", "Assigned", "In Progress", "Resolved"]
                     
                     if status == "Escalated":
@@ -96,13 +98,13 @@ def render_student_dashboard(logged_in_student_id: str):
                             st.info(f"**Status:** {status}")
                     
                     t_col1, t_col2, t_col3 = st.columns(3)
-                    t_col1.write(f"**🏢 Department:** {r['department']}")
-                    t_col2.write(f"**📌 Category:** {r['category']}")
-                    t_col3.write(f"**📅 Submitted:** {r['created_at'][:10]}")
+                    t_col1.write(f"**🏢 Department:** {r.get('department', 'N/A')}")
+                    t_col2.write(f"**📌 Category:** {r.get('category', 'N/A')}")
+                    t_col3.write(f"**📅 Submitted:** {(r.get('created_at') or '')[:10]}")
                     
                     st.markdown("---")
-                    st.markdown(f"**📝 Issue Description:**  \n{r['complaint_text']}")
-                    st.markdown(f"**🤖 AI Assessment:**  \n*{r['ai_reason']}*")
+                    st.markdown(f"**📝 Issue Description:**  \n{r.get('complaint_text', '')}")
+                    st.markdown(f"**🤖 AI Assessment:**  \n*{r.get('ai_reason', '')}*")
 
                     # Show safety flag
                     if r.get('safety_flag'):
@@ -115,7 +117,7 @@ def render_student_dashboard(logged_in_student_id: str):
                 if history:
                     with st.expander("📜 View Ticket Update History", expanded=True):
                         for h in history:
-                            st.markdown(f"**{h['updated_at']}** — 🔄 `{h['old_status']}` ➔ `{h['new_status']}`  \n> *{h['note']}*")
+                            st.markdown(f"**{h.get('updated_at', '')}** — 🔄 `{h.get('old_status')}` -> `{h.get('new_status')}`  \n> *{h.get('note', '')}*")
                             st.divider()
             else:
                 st.warning("❌ Ticket ID not found in the system.")

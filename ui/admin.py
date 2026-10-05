@@ -83,9 +83,11 @@ def render_admin_dashboard():
             selected_ticket = st.selectbox("Select a Ticket to Update", ticket_ids)
 
             if selected_ticket:
-                ticket_data = filtered_df[filtered_df['ticket_id'] == selected_ticket].iloc[0]
+                matching_records = filtered_df[filtered_df['ticket_id'] == selected_ticket]
+                if not matching_records.empty:
+                    ticket_data = matching_records.iloc[0]
 
-                with st.container(border=True):
+                    with st.container(border=True):
                     st.write(f"**👤 Student ID:** {ticket_data['student_id']}")
                     st.write(f"**📝 Complaint:** {ticket_data['complaint_text']}")
                     st.write(f"**🤖 AI Reason:** {ticket_data['ai_reason']}")
@@ -179,7 +181,7 @@ def render_admin_dashboard():
                 if history:
                     with st.expander("📜 View Ticket History", expanded=False):
                         for h in history:
-                            st.caption(f"🔄 `{h['old_status']}` → `{h['new_status']}` — {h['note']} ({h['updated_at']})")
+                            st.caption(f"🔄 `{h['old_status']}` -> `{h['new_status']}` - {h['note']} ({h['updated_at']})")
         else:
             st.info("No tickets match your filters.")
 
@@ -190,7 +192,7 @@ def render_admin_dashboard():
         st.subheader("🚨 Auto-Escalate Overdue Grievances")
         st.info("Escalate all High/Critical tickets still in 'Submitted' status.")
 
-        overdue = df[(df['priority'].isin(['High', 'Critical'])) & (df['status'] == 'Submitted')]
+        overdue = df[(df['priority'].isin(['High', 'Critical'])) & (df['status'] == 'Submitted')] if ('priority' in df.columns and 'status' in df.columns) else pd.DataFrame()
 
         if len(overdue) > 0:
             st.error(f"⚠️ Found **{len(overdue)}** overdue High/Critical ticket(s).")
