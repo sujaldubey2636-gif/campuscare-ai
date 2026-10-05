@@ -18,59 +18,46 @@ def render_student_dashboard(logged_in_student_id: str):
         if student:
             st.info(f"👤 **Identified Student:** {student['name']} ({student['course']}, Year {student['year']})")
         
-        with st.container(border=True):
-            with st.form("grievance_form"):
-                location = st.text_input("📍 Location", placeholder="e.g., Hostel Block B, Room 102")
-                complaint = st.text_area("🗣️ Describe your problem in detail", height=100, placeholder="The internet on our floor has been disconnecting frequently since yesterday...")
-                submit_btn = st.form_submit_button("🚀 Analyze & Submit", use_container_width=True)
-
-        # We don't need a separate student_id input anymore, we use the logged_in_student_id
-        student_id = logged_in_student_id
-
-        # ── Handle follow-up question flow ──
-        if 'follow_up_state' not in st.session_state:
-            st.session_state.follow_up_state = None
-
-        if submit_btn:
-            if not student_id or not complaint:
-                st.error("❌ Please provide both your Student ID and a Complaint description.")
-            else:
-                with st.spinner("🤖 CampusCare AI is analyzing your complaint..."):
+        st.markdown("### 💬 Chat with CampusCare AI")
+        
+        # Initialize chat history
+        if "chat_history" not in st.session_state:
+            st.session_state.chat_history = [{"role": "assistant", "content": f"Hi {student['name'].split()[0]}! I am the CampusCare AI. How can I help you today?"}]
+            
+        # Display history
+        for msg in st.session_state.chat_history:
+            with st.chat_message(msg["role"]):
+                st.write(msg["content"])
+                if msg.get("ticket_result"):
+                    _display_result(msg["ticket_result"])
+                    
+        # Accept input
+        prompt = st.chat_input("Describe your campus issue (e.g. 'The WiFi in Block B is down')...")
+        if prompt:
+            # Append user message
+            st.session_state.chat_history.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.write(prompt)
+                
+            # Process with AI
+            with st.chat_message("assistant"):
+                with st.spinner("Analyzing..."):
+                    context_prompt = prompt
+                    if st.session_state.follow_up_state:
+                        context_prompt = f"Previous context: {st.session_state.follow_up_state}\nUser reply: {prompt}"
+                        
                     agent = GrievanceAgent()
-                    result = agent.run(student_id=student_id, complaint_text=complaint, location=location)
-
-                    # Check if the agent wants to ask a follow-up question
+                    result = agent.run(student_id=logged_in_student_id, complaint_text=context_prompt, location="Parsed from chat")
+                    
                     if result.get("follow_up_question") and not result.get("ticket_info"):
-                        st.session_state.follow_up_state = {
-                            "question": result["follow_up_question"],
-                            "student_id": student_id,
-                            "location": location,
-                            "original_complaint": complaint,
-                        }
-                        st.rerun()
+                        st.write(result["follow_up_question"])
+                        st.session_state.chat_history.append({"role": "assistant", "content": result["follow_up_question"]})
+                        st.session_state.follow_up_state = context_prompt
                     else:
-                        st.session_state.follow_up_state = None
+                        st.write(result["agent_response"])
                         _display_result(result)
-
-        # ── Show follow-up question UI ──
-        if st.session_state.follow_up_state:
-            state = st.session_state.follow_up_state
-            st.warning(f"🤔 **AI Follow-Up Question:**\n\n{state['question']}")
-            with st.form("followup_form"):
-                extra_info = st.text_area("Your answer:", placeholder="Provide the details the AI asked for...")
-                followup_btn = st.form_submit_button("📨 Submit Additional Info", use_container_width=True)
-            if followup_btn and extra_info:
-                # Combine original complaint with the follow-up answer
-                combined = f"{state['original_complaint']}\n\nAdditional details: {extra_info}"
-                with st.spinner("🤖 AI is processing your updated complaint..."):
-                    agent = GrievanceAgent()
-                    result = agent.run(
-                        student_id=state['student_id'],
-                        complaint_text=combined,
-                        location=state['location']
-                    )
-                    st.session_state.follow_up_state = None
-                    _display_result(result)
+                        st.session_state.chat_history.append({"role": "assistant", "content": result["agent_response"], "ticket_result": result})
+                        st.session_state.follow_up_state = None
 
     with tab2:
         st.subheader("Track an Existing Ticket")

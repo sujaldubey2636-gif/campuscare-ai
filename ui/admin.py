@@ -229,11 +229,11 @@ def render_admin_dashboard():
             st.success("✅ No safety-flagged tickets.")
 
     # ──────────────────────────────────────────
-    # TAB 4: Campus Insights
+    # TAB 4: Campus Insights (Interactive Plotly)
     # ──────────────────────────────────────────
     with tab4:
-        st.subheader("🧠 AI Campus Insights")
-        st.caption("Aggregated intelligence from all grievance data to identify systemic campus issues.")
+        st.subheader("📊 Interactive Campus Analytics")
+        st.caption("Monitor grievance distributions and trends across the campus in real-time.")
 
         insights = get_campus_insights()
 
@@ -244,19 +244,33 @@ def render_admin_dashboard():
             i_col1.metric("📊 Total Grievances", insights.get("total_grievances", 0))
             i_col2.metric("🔥 Top Problem Category", insights.get("top_category", "N/A"))
             i_col3.metric("📍 Top Problem Location", insights.get("top_location", "N/A"))
-
             st.metric("🚨 Unresolved Critical Issues", insights.get("unresolved_critical", 0))
 
             st.markdown("---")
-            cat_breakdown = insights.get("category_breakdown", {})
-            if cat_breakdown:
-                st.markdown("**Category Breakdown**")
-                st.bar_chart(pd.Series(cat_breakdown))
-
-            loc_breakdown = insights.get("location_breakdown", {})
-            if loc_breakdown:
-                st.markdown("**Location Breakdown**")
-                st.bar_chart(pd.Series(loc_breakdown))
+            if not df.empty:
+                import plotly.express as px
+                
+                c1, c2 = st.columns(2)
+                
+                with c1:
+                    fig_cat = px.pie(df, names='category', hole=0.4, title='Complaints by Category', 
+                                     color_discrete_sequence=px.colors.qualitative.Pastel)
+                    fig_cat.update_layout(margin=dict(t=40, b=10, l=10, r=10))
+                    st.plotly_chart(fig_cat, use_container_width=True)
+                    
+                with c2:
+                    fig_stat = px.pie(df, names='status', hole=0.4, title='Current Ticket Statuses',
+                                      color_discrete_sequence=px.colors.sequential.Teal)
+                    fig_stat.update_layout(margin=dict(t=40, b=10, l=10, r=10))
+                    st.plotly_chart(fig_stat, use_container_width=True)
+                
+                st.markdown("---")
+                priority_dept_df = df.groupby(['department', 'priority']).size().reset_index(name='count')
+                fig_bar = px.bar(priority_dept_df, x='department', y='count', color='priority', 
+                                 title='Priority Levels Across Departments',
+                                 barmode='stack',
+                                 color_discrete_map={'Critical': '#EF4444', 'High': '#F97316', 'Medium': '#EAB308', 'Low': '#22C55E'})
+                st.plotly_chart(fig_bar, use_container_width=True)
 
 
 def _get_suggested_response(category, priority):
