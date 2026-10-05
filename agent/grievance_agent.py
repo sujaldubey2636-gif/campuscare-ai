@@ -104,7 +104,7 @@ Call `analyze_complaint` with these arguments:
 - complaint_text: the original text
 - category: your best classification (Academic/Examination/Hostel/Finance/IT/Library/Transport/Facilities/Security/Other)
 - category_confidence: how confident you are (0-100)
-- sentiment: one of calm/frustrated/angry/panicked
+- sentiment: evaluate student's tone: 'panicked' (extreme distress, crying, desperate), 'angry' (furious, outraged, unacceptable), 'frustrated' (annoyed, repeated issues), 'polite' (casual, relaxed, minor query, no rush), or 'calm' (neutral objective description).
 - issue: a short 3-8 word summary of the core problem
 - location: where on campus (use the student's provided location if available)
 - duration: how long the issue has existed (extract from text, or "" if unknown)
@@ -290,12 +290,24 @@ If an official policy applies to their case, clearly mention the policy in your 
                 affected = int(word)
                 break
 
+        # Multi-tone offline detection
+        if any(w in text_lower for w in ["panic", "emergency", "terrified", "crying", "ruined", "desperate"]):
+            fallback_sentiment = "panicked"
+        elif any(w in text_lower for w in ["unacceptable", "furious", "worst", "ridiculous", "hate", "angry"]):
+            fallback_sentiment = "angry"
+        elif any(w in text_lower for w in ["urgent", "frustrated", "again and again", "annoyed", "tired of"]):
+            fallback_sentiment = "frustrated"
+        elif any(w in text_lower for w in ["no rush", "whenever", "minor", "small suggestion", "just asking"]):
+            fallback_sentiment = "polite"
+        else:
+            fallback_sentiment = "calm"
+
         # ── Call our own analyze tool for transparent scoring ──
         analysis = analyze_complaint(
             complaint_text=complaint_text,
             category=category,
             category_confidence=60,  # Lower confidence in fallback
-            sentiment="frustrated" if any(w in text_lower for w in ["urgent", "please", "help"]) else "calm",
+            sentiment=fallback_sentiment,
             issue=f"{category} related issue",
             location=location,
             duration="unknown",
