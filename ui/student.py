@@ -50,8 +50,9 @@ def render_student_dashboard(logged_in_student_id: str):
             with st.chat_message("assistant"):
                 with st.spinner("Analyzing..."):
                     context_prompt = prompt
-                    if st.session_state.follow_up_state:
-                        context_prompt = f"Previous context: {st.session_state.follow_up_state}\nUser reply: {prompt}"
+                    follow_up = st.session_state.get('follow_up_state')
+                    if follow_up:
+                        context_prompt = f"Previous context: {follow_up}\nUser reply: {prompt}"
                         
                     agent = GrievanceAgent()
                     result = agent.run(student_id=logged_in_student_id, complaint_text=context_prompt, location="Parsed from chat")

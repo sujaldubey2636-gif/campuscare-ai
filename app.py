@@ -64,6 +64,10 @@ if 'user_role' not in st.session_state:
     st.session_state.user_role = None
 if 'student_id' not in st.session_state:
     st.session_state.student_id = None
+if 'follow_up_state' not in st.session_state:
+    st.session_state.follow_up_state = None
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
 
 def login_screen():
     # ── HERO SECTION ──
