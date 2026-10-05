@@ -18,7 +18,14 @@ def render_student_dashboard(logged_in_student_id: str):
         if student:
             st.info(f"👤 **Identified Student:** {student['name']} ({student['course']}, Year {student['year']})")
         
-        st.markdown("### 💬 Chat with CampusCare AI")
+        col_chat1, col_chat2 = st.columns([4, 1])
+        with col_chat1:
+            st.markdown("### 💬 Chat with CampusCare AI")
+        with col_chat2:
+            if st.button("🗑️ Clear Chat", use_container_width=True):
+                st.session_state.chat_history = [{"role": "assistant", "content": f"Hi {student['name'].split()[0]}! I am the CampusCare AI. How can I help you today?"}]
+                st.session_state.follow_up_state = None
+                st.rerun()
         
         # Initialize chat history
         if "chat_history" not in st.session_state:
@@ -113,10 +120,10 @@ def render_student_dashboard(logged_in_student_id: str):
                 st.warning("❌ Ticket ID not found in the system.")
 
         # Show all grievances for this student
-        if student_id and student_id.strip():
+        if logged_in_student_id and logged_in_student_id.strip():
             my_grievances = fetch_all(
                 "SELECT ticket_id, category, priority, department, status, created_at FROM grievances WHERE student_id = ? ORDER BY created_at DESC",
-                (student_id.strip(),)
+                (logged_in_student_id.strip(),)
             )
             if my_grievances:
                 st.markdown("---")
